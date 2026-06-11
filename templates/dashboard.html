@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Mini Network IDS Dashboard</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+<div class="container">
+
+    <header class="header">
+        <div>
+            <h1>Mini Network IDS Dashboard</h1>
+            <p>SQLite-backed alert monitoring with MITRE ATT&CK context and visual analytics.</p>
+        </div>
+        <div class="status-pill">Database: data/alerts.db</div>
+    </header>
+
+    <section class="cards">
+        <div class="card">
+            <span class="card-label">Total Alerts</span>
+            <span class="card-value">{{ summary.total }}</span>
+        </div>
+
+        <div class="card high">
+            <span class="card-label">High Severity</span>
+            <span class="card-value">{{ summary.high }}</span>
+        </div>
+
+        <div class="card medium">
+            <span class="card-label">Medium Severity</span>
+            <span class="card-value">{{ summary.medium }}</span>
+        </div>
+
+        <div class="card low">
+            <span class="card-label">Low Severity</span>
+            <span class="card-value">{{ summary.low }}</span>
+        </div>
+    </section>
+
+    <section class="charts-grid">
+        <div class="chart-card">
+            <h2>Severity Distribution</h2>
+            <div class="chart-container">
+                <canvas id="severityChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h2>Top Alert Types</h2>
+            <div class="chart-container">
+                <canvas id="alertTypeChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h2>Top MITRE Techniques</h2>
+            <div class="chart-container">
+                <canvas id="mitreChart"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <nav class="filters">
+        <a href="/" class="{% if not selected_severity %}active{% endif %}">All</a>
+        <a href="/alerts/high" class="{% if selected_severity == 'high' %}active{% endif %}">High</a>
+        <a href="/alerts/medium" class="{% if selected_severity == 'medium' %}active{% endif %}">Medium</a>
+        <a href="/alerts/low" class="{% if selected_severity == 'low' %}active{% endif %}">Low</a>
+    </nav>
+
+    <section class="table-panel">
+        <div class="table-title">
+            <h2>
+                {% if selected_severity %}
+                    {{ selected_severity|capitalize }} Alerts
+                {% else %}
+                    All Alerts
+                {% endif %}
+            </h2>
+            <span>{{ alerts|length }} rows shown</span>
+        </div>
+
+        {% if alerts %}
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Timestamp</th>
+                <th>Severity</th>
+                <th>Alert Type</th>
+                <th>Source IP</th>
+                <th>Destination IP</th>
+                <th>Description</th>
+                <th>MITRE</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for alert in alerts %}
+            <tr>
+                <td>{{ alert.id }}</td>
+                <td>{{ alert.timestamp }}</td>
+                <td>
+                    <span class="badge {{ alert.severity }}">
+                        {{ alert.severity }}
+                    </span>
+                </td>
+                <td>{{ alert.alert_type }}</td>
+                <td>{{ alert.source_ip }}</td>
+                <td>{{ alert.destination_ip }}</td>
+                <td class="description">{{ alert.description }}</td>
+                <td class="mitre">
+                    {% if alert.mitre_attack %}
+                        {{ alert.mitre_attack.technique_id }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="empty">No alerts found for this filter.</div>
+        {% endif %}
+    </section>
+
+</div>
+
+<script>
+    window.dashboardChartData = {{ chart_data | tojson }};
+</script>
+<script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+
+</body>
+</html>
