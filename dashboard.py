@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections import Counter
 from pathlib import Path
 
 from flask import Flask, render_template_string
@@ -11,14 +12,11 @@ DB_PATH = Path("data/alerts.db")
 app = Flask(__name__)
 
 
-def load_alerts(severity: str | None = None):
+def load_alerts(severity: str | None = None) -> list[dict]:
     if not DB_PATH.exists():
         return []
 
-    query = """
-        SELECT *
-        FROM alerts
-    """
+    query = "SELECT * FROM alerts"
     params = []
 
     if severity:
@@ -37,18 +35,21 @@ def load_alerts(severity: str | None = None):
         alert = dict(row)
 
         try:
-            alert["mitre_attack"] = json.loads(
-                alert.get("mitre_attack") or "null"
-            )
+            alert["mitre_attack"] = json.loads(alert.get("mitre_attack") or "null")
         except Exception:
             alert["mitre_attack"] = None
+
+        try:
+            alert["evidence"] = json.loads(alert.get("evidence") or "{}")
+        except Exception:
+            alert["evidence"] = {}
 
         alerts.append(alert)
 
     return alerts
 
 
-def build_summary():
+def build_summary() -> dict:
     alerts = load_alerts()
 
     return {
@@ -59,8 +60,34 @@ def build_summary():
     }
 
 
-def render_dashboard(alerts, selected_severity: str | None = None):
+def build_analytics(alerts: list[dict]) -> dict:
+    alert_type_counts = Counter(a["alert_type"] for a in alerts)
+
+    mitre_counts = Counter()
+    for alert in alerts:
+        mitre = alert.get("mitre_attack")
+        if mitre:
+            key = f"{mitre.get('technique_id')} — {mitre.get('technique_name')}"
+            mitre_counts[key] += 1
+
+    severity_counts = Counter(a["severity"] for a in alerts)
+    max_severity = max(severity_counts.values(), default=1)
+
+    return {
+        "top_alert_types": alert_type_counts.most_common(5),
+        "top_mitre": mitre_counts.most_common(5),
+        "severity_counts": {
+            "high": severity_counts.get("high", 0),
+            "medium": severity_counts.get("medium", 0),
+            "low": severity_counts.get("low", 0),
+        },
+        "max_severity": max_severity,
+    }
+
+
+def render_dashboard(alerts: list[dict], selected_severity: str | None = None):
     summary = build_summary()
+    analytics = build_analytics(alerts)
 
     return render_template_string(
         """
@@ -96,7 +123,7 @@ body {
 }
 
 .container {
-    max-width: 1280px;
+    max-width: 1320px;
     margin: 0 auto;
     padding: 32px;
 }
@@ -137,7 +164,8 @@ body {
     margin-bottom: 24px;
 }
 
-.card {
+.card,
+.analytics-card {
     background: rgba(17, 24, 39, 0.95);
     border: 1px solid var(--border);
     border-radius: 14px;
@@ -169,6 +197,78 @@ body {
 
 .card.low .card-value {
     color: var(--low);
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1.1fr 0.8fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.analytics-card h2 {
+    margin: 0 0 16px 0;
+    font-size: 17px;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(51, 65, 85, 0.65);
+}
+
+.metric-row:last-child {
+    border-bottom: none;
+}
+
+.metric-name {
+    color: var(--text);
+    font-size: 14px;
+}
+
+.metric-value {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.bar-row {
+    margin-bottom: 16px;
+}
+
+.bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.bar-track {
+    width: 100%;
+    height: 11px;
+    background: #020617;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.bar-fill {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.bar-fill.high {
+    background: var(--high);
+}
+
+.bar-fill.medium {
+    background: var(--medium);
+}
+
+.bar-fill.low {
+    background: var(--low);
 }
 
 .toolbar {
@@ -302,9 +402,10 @@ tr:hover td {
     color: var(--muted);
 }
 
-@media (max-width: 900px) {
-    .cards {
-        grid-template-columns: repeat(2, 1fr);
+@media (max-width: 1000px) {
+    .cards,
+    .analytics-grid {
+        grid-template-columns: 1fr 1fr;
     }
 
     .header,
@@ -312,9 +413,16 @@ tr:hover td {
         flex-direction: column;
         align-items: flex-start;
     }
+}
 
-    table {
-        font-size: 12px;
+@media (max-width: 700px) {
+    .cards,
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        padding: 18px;
     }
 }
 </style>
@@ -350,6 +458,70 @@ tr:hover td {
         <div class="card low">
             <span class="card-label">Low Severity</span>
             <span class="card-value">{{ summary.low }}</span>
+        </div>
+    </div>
+
+    <div class="analytics-grid">
+        <div class="analytics-card">
+            <h2>Top Alert Types</h2>
+            {% if analytics.top_alert_types %}
+                {% for name, count in analytics.top_alert_types %}
+                <div class="metric-row">
+                    <span class="metric-name">{{ name }}</span>
+                    <span class="metric-value">{{ count }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">No alert type data available.</div>
+            {% endif %}
+        </div>
+
+        <div class="analytics-card">
+            <h2>Top MITRE ATT&CK Techniques</h2>
+            {% if analytics.top_mitre %}
+                {% for name, count in analytics.top_mitre %}
+                <div class="metric-row">
+                    <span class="metric-name">{{ name }}</span>
+                    <span class="metric-value">{{ count }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty">No MITRE data available.</div>
+            {% endif %}
+        </div>
+
+        <div class="analytics-card">
+            <h2>Severity Distribution</h2>
+
+            <div class="bar-row">
+                <div class="bar-label">
+                    <span>High</span>
+                    <span>{{ analytics.severity_counts.high }}</span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill high" style="width: {{ (analytics.severity_counts.high / analytics.max_severity * 100) if analytics.max_severity else 0 }}%"></div>
+                </div>
+            </div>
+
+            <div class="bar-row">
+                <div class="bar-label">
+                    <span>Medium</span>
+                    <span>{{ analytics.severity_counts.medium }}</span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill medium" style="width: {{ (analytics.severity_counts.medium / analytics.max_severity * 100) if analytics.max_severity else 0 }}%"></div>
+                </div>
+            </div>
+
+            <div class="bar-row">
+                <div class="bar-label">
+                    <span>Low</span>
+                    <span>{{ analytics.severity_counts.low }}</span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill low" style="width: {{ (analytics.severity_counts.low / analytics.max_severity * 100) if analytics.max_severity else 0 }}%"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -425,6 +597,7 @@ tr:hover td {
         """,
         alerts=alerts,
         summary=summary,
+        analytics=analytics,
         selected_severity=selected_severity,
     )
 
