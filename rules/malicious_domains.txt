@@ -1,0 +1,3 @@
+malicious-example.com
+bad-domain.test
+suspicious-c2.net

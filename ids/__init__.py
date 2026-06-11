@@ -1,0 +1,1 @@
+"""Mini Network IDS package."""
