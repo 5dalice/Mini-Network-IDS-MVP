@@ -1,0 +1,13 @@
+title: Remote Access Port Activity
+
+description: Detect traffic to common remote access ports
+
+logsource:
+  product: network
+
+detection:
+  destination_port:
+    - 22
+    - 3389
+
+severity: medium

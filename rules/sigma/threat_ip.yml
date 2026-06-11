@@ -1,0 +1,14 @@
+title: Threat IP Communication
+
+description: Detect communication with known suspicious IP addresses
+
+logsource:
+  product: network
+
+detection:
+  destination_ip:
+    - 45.133.1.23
+    - 185.220.101.1
+    - 91.240.118.172
+
+severity: high

@@ -35,6 +35,11 @@ MITRE_MAPPING = {
         "technique_name": "Application Layer Protocol: DNS",
         "tactic": "Command and Control",
     },
+    "SIGMA_RULE_MATCH": {
+    "technique_id": "T1046",
+    "technique_name": "Network Service Discovery",
+    "tactic": "Discovery",
+},
 }
 
 
@@ -45,6 +50,7 @@ ALERT_DISPLAY_NAMES = {
     "REPEATED_LARGE_PACKETS": "Repeated Large Packet Transfer",
     "MALICIOUS_IP_COMMUNICATION": "Malicious IP Communication",
     "SIGMA_DNS_MATCH": "Sigma DNS Rule Match",
+    "SIGMA_RULE_MATCH": "Sigma Rule Match",
 }
 
 
