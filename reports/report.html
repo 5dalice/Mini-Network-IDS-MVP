@@ -1,0 +1,132 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mini Network IDS Report</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    margin: 40px;
+    background-color: #f4f4f4;
+}
+
+h1 {
+    color: #222;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: left;
+}
+
+th {
+    background-color: #222;
+    color: white;
+}
+
+.high {
+    color: red;
+    font-weight: bold;
+}
+
+.medium {
+    color: orange;
+    font-weight: bold;
+}
+
+.low {
+    color: green;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<h1>Mini Network IDS Report</h1>
+
+<p><strong>Total alerts:</strong> 4</p>
+
+<table>
+<thead>
+<tr>
+<th>Timestamp</th>
+<th>Severity</th>
+<th>Alert Type</th>
+<th>Source IP</th>
+<th>Destination IP</th>
+<th>Description</th>
+<th>MITRE ID</th>
+<th>MITRE Technique</th>
+</tr>
+</thead>
+
+<tbody>
+
+            <tr>
+                <td>2024-06-10T12:00:20+00:00</td>
+                <td class="medium">
+                    medium
+                </td>
+                <td>PORT_SCAN</td>
+                <td>192.168.1.10</td>
+                <td>192.168.1.20</td>
+                <td>Possible port scan detected</td>
+                <td>T1046</td>
+                <td>Network Service Discovery</td>
+            </tr>
+            
+            <tr>
+                <td>2024-06-10T12:00:30+00:00</td>
+                <td class="high">
+                    high
+                </td>
+                <td>MALICIOUS_DNS_QUERY</td>
+                <td>192.168.1.30</td>
+                <td>8.8.8.8</td>
+                <td>DNS query matched malicious domain blocklist</td>
+                <td>T1071.004</td>
+                <td>Application Layer Protocol: DNS</td>
+            </tr>
+            
+            <tr>
+                <td>2024-06-10T12:00:44+00:00</td>
+                <td class="low">
+                    low
+                </td>
+                <td>REPEATED_LARGE_PACKETS</td>
+                <td>192.168.1.50</td>
+                <td>192.168.1.60</td>
+                <td>Repeated unusually large packets detected</td>
+                <td>T1041</td>
+                <td>Exfiltration Over C2 Channel</td>
+            </tr>
+            
+            <tr>
+                <td>2024-06-10T12:00:31+00:00</td>
+                <td class="high">
+                    high
+                </td>
+                <td>MALICIOUS_IP_COMMUNICATION</td>
+                <td>192.168.1.40</td>
+                <td>45.133.1.23</td>
+                <td>Packet matched malicious IP blocklist</td>
+                <td>T1071</td>
+                <td>Application Layer Protocol</td>
+            </tr>
+            
+</tbody>
+
+</table>
+
+</body>
+</html>
