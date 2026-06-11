@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from ids.sigma_engine import load_sigma_rules, run_sigma_rules
+
 from ids.config import load_blocklist
 from ids.database import save_alerts_to_db
 from ids.detectors import (
@@ -19,6 +19,8 @@ from ids.reporter import (
     print_report,
     save_json_report,
 )
+from ids.scoring import apply_threat_scores
+from ids.sigma_engine import load_sigma_rules, run_sigma_rules
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -90,25 +92,31 @@ def analyze(pcap_path: str, rules_dir: str) -> list[dict]:
 
     alerts.extend(detect_port_scan(packets))
     alerts.extend(detect_syn_flood(packets))
+
     alerts.extend(
         detect_malicious_dns(
             packets,
             domain_blocklist,
         )
     )
+
     alerts.extend(detect_large_packets(packets))
+
     alerts.extend(
         detect_malicious_ips(
             packets,
             ip_blocklist,
         )
     )
+
     alerts.extend(
         run_sigma_rules(
             packets,
             sigma_rules,
         )
     )
+
+    alerts = apply_threat_scores(alerts)
 
     return alerts
 
