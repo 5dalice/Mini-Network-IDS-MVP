@@ -30,6 +30,11 @@ MITRE_MAPPING = {
         "technique_name": "Exfiltration Over C2 Channel",
         "tactic": "Exfiltration",
     },
+    "SIGMA_DNS_MATCH": {
+        "technique_id": "T1071.004",
+        "technique_name": "Application Layer Protocol: DNS",
+        "tactic": "Command and Control",
+    },
 }
 
 
@@ -39,6 +44,7 @@ ALERT_DISPLAY_NAMES = {
     "MALICIOUS_DNS_QUERY": "Malicious DNS Query",
     "REPEATED_LARGE_PACKETS": "Repeated Large Packet Transfer",
     "MALICIOUS_IP_COMMUNICATION": "Malicious IP Communication",
+    "SIGMA_DNS_MATCH": "Sigma DNS Rule Match",
 }
 
 

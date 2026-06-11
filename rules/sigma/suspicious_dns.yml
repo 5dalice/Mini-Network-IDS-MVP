@@ -1,0 +1,14 @@
+title: Suspicious DNS Activity
+
+description: Detect DNS requests to known malicious domains
+
+logsource:
+  product: network
+
+detection:
+  domain:
+    - bad-domain.test
+    - malicious-example.com
+    - suspicious-c2.net
+
+severity: high

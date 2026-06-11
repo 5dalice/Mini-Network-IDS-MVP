@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-
+from ids.sigma_engine import load_sigma_rules, run_sigma_rules
 from ids.config import load_blocklist
 from ids.database import save_alerts_to_db
 from ids.detectors import (
@@ -82,6 +82,10 @@ def analyze(pcap_path: str, rules_dir: str) -> list[dict]:
         rules_path / "malicious_ips.txt"
     )
 
+    sigma_rules = load_sigma_rules(
+        rules_path / "sigma"
+    )
+
     alerts: list[dict] = []
 
     alerts.extend(detect_port_scan(packets))
@@ -97,6 +101,12 @@ def analyze(pcap_path: str, rules_dir: str) -> list[dict]:
         detect_malicious_ips(
             packets,
             ip_blocklist,
+        )
+    )
+    alerts.extend(
+        run_sigma_rules(
+            packets,
+            sigma_rules,
         )
     )
 
