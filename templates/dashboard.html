@@ -63,7 +63,52 @@
             </div>
         </div>
     </section>
+<section class="table-panel incidents-panel">
+    <div class="table-title">
+        <h2>Top Correlated Incidents</h2>
+        <span>{{ incidents|length }} incidents</span>
+    </div>
 
+    {% if incidents %}
+    <table>
+        <thead>
+        <tr>
+            <th>Incident ID</th>
+            <th>Source IP</th>
+            <th>Risk</th>
+            <th>Total Score</th>
+            <th>Alerts</th>
+            <th>First Seen</th>
+            <th>Last Seen</th>
+            <th>Alert Types</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for incident in incidents %}
+        <tr>
+            <td>#{{ incident.incident_id }}</td>
+            <td>{{ incident.source_ip }}</td>
+            <td>
+                <span class="badge {{ incident.risk_level }}">
+                    {{ incident.risk_level }}
+                </span>
+            </td>
+            <td>{{ incident.total_score }}</td>
+            <td>{{ incident.alert_count }}</td>
+            <td>{{ incident.first_seen }}</td>
+            <td>{{ incident.last_seen }}</td>
+            <td class="description">
+                {{ incident.alert_types | join(", ") }}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+        <div class="empty">No correlated incidents found.</div>
+    {% endif %}
+</section>
     <nav class="filters">
         <a href="/" class="{% if not selected_severity %}active{% endif %}">All</a>
         <a href="/alerts/high" class="{% if selected_severity == 'high' %}active{% endif %}">High</a>

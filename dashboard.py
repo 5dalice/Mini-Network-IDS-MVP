@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from ids.correlation import build_incidents
 from flask import Flask, render_template, request
 
 from ids.dashboard_data import (
@@ -19,15 +19,16 @@ def render_alert_dashboard(
     selected_severity: str | None = None,
     search_ip: str | None = None,
 ):
-    return render_template(
-        "dashboard.html",
-        alerts=alerts,
-        summary=build_summary(),
-        analytics=build_analytics(alerts),
-        chart_data=build_chart_data(alerts),
-        selected_severity=selected_severity,
-        search_ip=search_ip,
-    )
+  return render_template(
+    "dashboard.html",
+    alerts=alerts,
+    summary=build_summary(),
+    analytics=build_analytics(alerts),
+    chart_data=build_chart_data(alerts),
+    incidents=build_incidents(alerts),
+    selected_severity=selected_severity,
+    search_ip=search_ip,
+)
 
 
 @app.route("/")
