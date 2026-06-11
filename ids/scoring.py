@@ -8,40 +8,77 @@ SEVERITY_SCORES = {
 }
 
 
-ALERT_TYPE_BONUS = {
+ALERT_TYPE_WEIGHTS = {
     "PORT_SCAN": 20,
-    "SYN_FLOOD_PATTERN": 30,
+    "SYN_FLOOD_PATTERN": 35,
     "MALICIOUS_DNS_QUERY": 40,
     "MALICIOUS_IP_COMMUNICATION": 50,
-    "REPEATED_LARGE_PACKETS": 15,
+    "REPEATED_LARGE_PACKETS": 20,
     "SIGMA_DNS_MATCH": 35,
     "SIGMA_RULE_MATCH": 35,
 }
+
+
+MITRE_TACTIC_WEIGHTS = {
+    "Discovery": 10,
+    "Command and Control": 25,
+    "Exfiltration": 30,
+    "Impact": 30,
+}
+
+
+THREAT_INTEL_ALERTS = {
+    "MALICIOUS_DNS_QUERY",
+    "MALICIOUS_IP_COMMUNICATION",
+    "SIGMA_DNS_MATCH",
+    "SIGMA_RULE_MATCH",
+}
+
+
+def calculate_risk_level(score: int) -> str:
+    if score >= 90:
+        return "critical"
+
+    if score >= 70:
+        return "high"
+
+    if score >= 40:
+        return "medium"
+
+    return "low"
 
 
 def calculate_threat_score(alert: dict) -> int:
     severity = alert.get("severity", "low")
     alert_type = alert.get("alert_type", "")
 
-    base_score = SEVERITY_SCORES.get(severity, 10)
-    bonus_score = ALERT_TYPE_BONUS.get(alert_type, 0)
+    score = 0
 
-    score = base_score + bonus_score
+    score += SEVERITY_SCORES.get(severity, 10)
+    score += ALERT_TYPE_WEIGHTS.get(alert_type, 0)
+
+    mitre = alert.get("mitre_attack") or {}
+    tactic = mitre.get("tactic")
+
+    if tactic:
+        score += MITRE_TACTIC_WEIGHTS.get(tactic, 0)
+
+    evidence = alert.get("evidence") or {}
+
+    if alert_type in THREAT_INTEL_ALERTS:
+        score += 15
+
+    if evidence.get("rule_type") == "sigma":
+        score += 10
 
     return min(score, 100)
 
 
 def apply_threat_scores(alerts: list[dict]) -> list[dict]:
     for alert in alerts:
-        alert["threat_score"] = calculate_threat_score(alert)
+        score = calculate_threat_score(alert)
 
-        if alert["threat_score"] >= 80:
-            alert["risk_level"] = "critical"
-        elif alert["threat_score"] >= 60:
-            alert["risk_level"] = "high"
-        elif alert["threat_score"] >= 30:
-            alert["risk_level"] = "medium"
-        else:
-            alert["risk_level"] = "low"
+        alert["threat_score"] = score
+        alert["risk_level"] = calculate_risk_level(score)
 
     return alerts
