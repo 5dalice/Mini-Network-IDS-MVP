@@ -71,7 +71,6 @@ def build_analytics(alerts: list[dict]) -> dict:
             mitre_counts[key] += 1
 
     severity_counts = Counter(a["severity"] for a in alerts)
-    max_severity = max(severity_counts.values(), default=1)
 
     return {
         "top_alert_types": alert_type_counts.most_common(5),
@@ -81,13 +80,25 @@ def build_analytics(alerts: list[dict]) -> dict:
             "medium": severity_counts.get("medium", 0),
             "low": severity_counts.get("low", 0),
         },
-        "max_severity": max_severity,
     }
 
 
 def render_dashboard(alerts: list[dict], selected_severity: str | None = None):
     summary = build_summary()
     analytics = build_analytics(alerts)
+
+    severity_labels = ["High", "Medium", "Low"]
+    severity_values = [
+        analytics["severity_counts"]["high"],
+        analytics["severity_counts"]["medium"],
+        analytics["severity_counts"]["low"],
+    ]
+
+    alert_type_labels = [item[0] for item in analytics["top_alert_types"]]
+    alert_type_values = [item[1] for item in analytics["top_alert_types"]]
+
+    mitre_labels = [item[0] for item in analytics["top_mitre"]]
+    mitre_values = [item[1] for item in analytics["top_mitre"]]
 
     return render_template_string(
         """
@@ -96,6 +107,8 @@ def render_dashboard(alerts: list[dict], selected_severity: str | None = None):
 <head>
 <meta charset="UTF-8">
 <title>Mini Network IDS Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 :root {
@@ -123,7 +136,7 @@ body {
 }
 
 .container {
-    max-width: 1320px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 32px;
 }
@@ -165,6 +178,7 @@ body {
 }
 
 .card,
+.chart-card,
 .analytics-card {
     background: rgba(17, 24, 39, 0.95);
     border: 1px solid var(--border);
@@ -199,9 +213,26 @@ body {
     color: var(--low);
 }
 
+.charts-grid {
+    display: grid;
+    grid-template-columns: 0.8fr 1.1fr 1.1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.chart-card h2 {
+    margin: 0 0 16px 0;
+    font-size: 17px;
+}
+
+.chart-container {
+    position: relative;
+    height: 290px;
+}
+
 .analytics-grid {
     display: grid;
-    grid-template-columns: 1.1fr 1.1fr 0.8fr;
+    grid-template-columns: 1fr 1fr;
     gap: 16px;
     margin-bottom: 24px;
 }
@@ -231,44 +262,6 @@ body {
 .metric-value {
     color: var(--accent);
     font-weight: 700;
-}
-
-.bar-row {
-    margin-bottom: 16px;
-}
-
-.bar-label {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 7px;
-    color: var(--muted);
-    font-size: 13px;
-}
-
-.bar-track {
-    width: 100%;
-    height: 11px;
-    background: #020617;
-    border-radius: 999px;
-    overflow: hidden;
-    border: 1px solid var(--border);
-}
-
-.bar-fill {
-    height: 100%;
-    border-radius: 999px;
-}
-
-.bar-fill.high {
-    background: var(--high);
-}
-
-.bar-fill.medium {
-    background: var(--medium);
-}
-
-.bar-fill.low {
-    background: var(--low);
 }
 
 .toolbar {
@@ -402,8 +395,9 @@ tr:hover td {
     color: var(--muted);
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1100px) {
     .cards,
+    .charts-grid,
     .analytics-grid {
         grid-template-columns: 1fr 1fr;
     }
@@ -415,14 +409,21 @@ tr:hover td {
     }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 720px) {
     .cards,
+    .charts-grid,
     .analytics-grid {
         grid-template-columns: 1fr;
     }
 
     .container {
         padding: 18px;
+    }
+
+    table {
+        display: block;
+        overflow-x: auto;
+        white-space: nowrap;
     }
 }
 </style>
@@ -434,7 +435,7 @@ tr:hover td {
     <div class="header">
         <div>
             <h1>Mini Network IDS Dashboard</h1>
-            <p>SQLite-backed alert monitoring with MITRE ATT&CK context.</p>
+            <p>SQLite-backed alert monitoring with MITRE ATT&CK context and visual analytics.</p>
         </div>
         <div class="status-pill">Database: data/alerts.db</div>
     </div>
@@ -458,6 +459,29 @@ tr:hover td {
         <div class="card low">
             <span class="card-label">Low Severity</span>
             <span class="card-value">{{ summary.low }}</span>
+        </div>
+    </div>
+
+    <div class="charts-grid">
+        <div class="chart-card">
+            <h2>Severity Distribution</h2>
+            <div class="chart-container">
+                <canvas id="severityChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h2>Top Alert Types</h2>
+            <div class="chart-container">
+                <canvas id="alertTypeChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-card">
+            <h2>Top MITRE Techniques</h2>
+            <div class="chart-container">
+                <canvas id="mitreChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -488,40 +512,6 @@ tr:hover td {
             {% else %}
                 <div class="empty">No MITRE data available.</div>
             {% endif %}
-        </div>
-
-        <div class="analytics-card">
-            <h2>Severity Distribution</h2>
-
-            <div class="bar-row">
-                <div class="bar-label">
-                    <span>High</span>
-                    <span>{{ analytics.severity_counts.high }}</span>
-                </div>
-                <div class="bar-track">
-                    <div class="bar-fill high" style="width: {{ (analytics.severity_counts.high / analytics.max_severity * 100) if analytics.max_severity else 0 }}%"></div>
-                </div>
-            </div>
-
-            <div class="bar-row">
-                <div class="bar-label">
-                    <span>Medium</span>
-                    <span>{{ analytics.severity_counts.medium }}</span>
-                </div>
-                <div class="bar-track">
-                    <div class="bar-fill medium" style="width: {{ (analytics.severity_counts.medium / analytics.max_severity * 100) if analytics.max_severity else 0 }}%"></div>
-                </div>
-            </div>
-
-            <div class="bar-row">
-                <div class="bar-label">
-                    <span>Low</span>
-                    <span>{{ analytics.severity_counts.low }}</span>
-                </div>
-                <div class="bar-track">
-                    <div class="bar-fill low" style="width: {{ (analytics.severity_counts.low / analytics.max_severity * 100) if analytics.max_severity else 0 }}%"></div>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -592,6 +582,105 @@ tr:hover td {
     </div>
 
 </div>
+
+<script>
+const severityLabels = {{ severity_labels | tojson }};
+const severityValues = {{ severity_values | tojson }};
+const alertTypeLabels = {{ alert_type_labels | tojson }};
+const alertTypeValues = {{ alert_type_values | tojson }};
+const mitreLabels = {{ mitre_labels | tojson }};
+const mitreValues = {{ mitre_values | tojson }};
+
+Chart.defaults.color = "#e5e7eb";
+Chart.defaults.borderColor = "rgba(148, 163, 184, 0.25)";
+
+new Chart(document.getElementById("severityChart"), {
+    type: "doughnut",
+    data: {
+        labels: severityLabels,
+        datasets: [{
+            data: severityValues,
+            backgroundColor: ["#ef4444", "#f59e0b", "#22c55e"],
+            borderColor: "#111827",
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: "bottom"
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById("alertTypeChart"), {
+    type: "bar",
+    data: {
+        labels: alertTypeLabels,
+        datasets: [{
+            label: "Alerts",
+            data: alertTypeValues,
+            backgroundColor: "rgba(56, 189, 248, 0.65)",
+            borderColor: "#38bdf8",
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: "y",
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById("mitreChart"), {
+    type: "bar",
+    data: {
+        labels: mitreLabels,
+        datasets: [{
+            label: "Alerts",
+            data: mitreValues,
+            backgroundColor: "rgba(129, 140, 248, 0.65)",
+            borderColor: "#818cf8",
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: "y",
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
+            }
+        }
+    }
+});
+</script>
+
 </body>
 </html>
         """,
@@ -599,6 +688,12 @@ tr:hover td {
         summary=summary,
         analytics=analytics,
         selected_severity=selected_severity,
+        severity_labels=severity_labels,
+        severity_values=severity_values,
+        alert_type_labels=alert_type_labels,
+        alert_type_values=alert_type_values,
+        mitre_labels=mitre_labels,
+        mitre_values=mitre_values,
     )
 
 
