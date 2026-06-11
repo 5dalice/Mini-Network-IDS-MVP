@@ -33,6 +33,15 @@ MITRE_MAPPING = {
 }
 
 
+ALERT_DISPLAY_NAMES = {
+    "PORT_SCAN": "Port Scan Detected",
+    "SYN_FLOOD_PATTERN": "TCP SYN Flood Pattern",
+    "MALICIOUS_DNS_QUERY": "Malicious DNS Query",
+    "REPEATED_LARGE_PACKETS": "Repeated Large Packet Transfer",
+    "MALICIOUS_IP_COMMUNICATION": "Malicious IP Communication",
+}
+
+
 def iso_timestamp(epoch_seconds: float | int | None) -> str:
     if epoch_seconds is None:
         return datetime.now(timezone.utc).isoformat()
@@ -52,6 +61,7 @@ def create_alert(
     return {
         "timestamp": iso_timestamp(timestamp),
         "alert_type": alert_type,
+        "display_name": ALERT_DISPLAY_NAMES.get(alert_type, alert_type),
         "severity": severity,
         "source_ip": source_ip,
         "destination_ip": destination_ip,

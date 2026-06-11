@@ -70,27 +70,15 @@
         <a href="/alerts/medium" class="{% if selected_severity == 'medium' %}active{% endif %}">Medium</a>
         <a href="/alerts/low" class="{% if selected_severity == 'low' %}active{% endif %}">Low</a>
     </nav>
-<form class="search-form" action="/search" method="get">
-    <input
-        type="text"
-        name="ip"
-        placeholder="Search source or destination IP..."
-        value="{{ search_ip or '' }}"
-    >
-    <button type="submit">Search IP</button>
-    <a class="reset-link" href="/">Reset</a>
-</form>
 
     <section class="table-panel">
         <div class="table-title">
             <h2>
-         {% if search_ip %}
-    Search results for {{ search_ip }}
-{% elif selected_severity %}
-    {{ selected_severity|capitalize }} Alerts
-{% else %}
-    All Alerts
-{% endif %}
+                {% if selected_severity %}
+                    {{ selected_severity|capitalize }} Alerts
+                {% else %}
+                    All Alerts
+                {% endif %}
             </h2>
             <span>{{ alerts|length }} rows shown</span>
         </div>
@@ -120,7 +108,7 @@
                         {{ alert.severity }}
                     </span>
                 </td>
-                <td>{{ alert.alert_type }}</td>
+               <td>{{ alert.display_name }}</td>
                 <td>{{ alert.source_ip }}</td>
                 <td>{{ alert.destination_ip }}</td>
                 <td class="description">{{ alert.description }}</td>

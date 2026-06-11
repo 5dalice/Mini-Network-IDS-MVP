@@ -8,11 +8,11 @@ from pathlib import Path
 DB_PATH = Path("data/alerts.db")
 
 DISPLAY_NAMES = {
-    "PORT_SCAN": "Port Scan Detected",
-    "SYN_FLOOD_PATTERN": "TCP SYN Flood Pattern",
-    "MALICIOUS_DNS_QUERY": "Malicious DNS Query",
-    "REPEATED_LARGE_PACKETS": "Repeated Large Packet Transfer",
-    "MALICIOUS_IP_COMMUNICATION": "Malicious IP Communication",
+    "PORT_SCAN": "Port Scan",
+    "SYN_FLOOD_PATTERN": "SYN Flood Activity",
+    "MALICIOUS_DNS_QUERY": "Malicious DNS Request",
+    "REPEATED_LARGE_PACKETS": "Large Data Transfer",
+    "MALICIOUS_IP_COMMUNICATION": "Communication with Blocklisted IP",
 }
 
 
@@ -95,7 +95,7 @@ def build_summary() -> dict:
 
 def build_analytics(alerts: list[dict]) -> dict:
     alert_type_counts = Counter(
-        a.get("display_name") or a["alert_type"]
+        a.get("display_name")
         for a in alerts
     )
 
@@ -119,7 +119,6 @@ def build_analytics(alerts: list[dict]) -> dict:
             "low": severity_counts.get("low", 0),
         },
     }
-
 
 def build_chart_data(alerts: list[dict]) -> dict:
     analytics = build_analytics(alerts)
