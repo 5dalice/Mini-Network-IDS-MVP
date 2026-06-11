@@ -1,113 +1,83 @@
 # Mini Network IDS
 
-Mini Network IDS is a lightweight Python-based intrusion detection system that analyzes `.pcap` files and detects suspicious network behavior such as port scanning, SYN flooding patterns, malicious DNS queries, repeated large packets, and communication with known suspicious IP addresses.
-
-The project is designed as a defensive cybersecurity portfolio project focused on network traffic analysis, alert generation, and security automation.
+Mini Network IDS is a Python-based intrusion detection and incident analysis platform that analyzes `.pcap` files, detects suspicious network activity, applies threat scoring, correlates alerts into incidents, and visualizes results through a web dashboard.
 
 ## Features
 
-- Reads `.pcap` files with Scapy
-- Extracts normalized packet metadata
-- Detects suspicious traffic using rule-based logic
-- Prints alerts in the terminal using Rich
-- Exports JSON reports
-- Supports simple blocklists for domains and IP addresses
-- Includes pytest-based tests
+* PCAP analysis using Scapy
+* Rule-based network detections
+* Sigma-style detection rules (YAML)
+* MITRE ATT&CK mapping
+* Threat scoring and risk levels
+* Incident correlation engine
+* SQLite alert storage
+* JSON and HTML reports
+* Flask web dashboard
+* Chart.js visualizations
+* Severity filtering and IP search
+* Automated tests with pytest
 
-## Installation
+## Detection Capabilities
 
-```bash
-python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-pip install -r requirements.txt
-```
+* Port Scan Detection
+* SYN Flood Detection
+* Malicious DNS Queries
+* Malicious IP Communication
+* Large Packet Transfer Detection
+* Sigma Rule Matching
 
-On Windows PowerShell:
+## Technologies
 
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
+* Python
+* Flask
+* SQLite
+* Scapy
+* PyYAML
+* Chart.js
+* Pytest
+* MITRE ATT&CK
+* Sigma Rules
 
-## Usage
-
-```bash
-python mini_ids.py --pcap samples/test_traffic.pcap --output reports/report.json --show-summary
-```
-
-Filter by severity:
-
-```bash
-python mini_ids.py --pcap samples/test_traffic.pcap --severity high
-```
-
-Use a custom rules directory:
+## Quick Start
 
 ```bash
-python mini_ids.py --pcap samples/test_traffic.pcap --rules rules/
+python mini_ids.py \
+  --pcap samples/test_traffic.pcap \
+  --output reports/report.json \
+  --db-output data/alerts.db \
+  --show-summary
 ```
 
-## Detection Rules
-
-| Rule | Description | Severity |
-|---|---|---|
-| PORT_SCAN | One source contacts more than 20 destination ports on the same target within 60 seconds | medium |
-| SYN_FLOOD_PATTERN | One source sends more than 100 TCP SYN packets within 60 seconds | medium/high |
-| MALICIOUS_DNS_QUERY | DNS query matches malicious domain blocklist | high |
-| REPEATED_LARGE_PACKETS | Repeated packets larger than 1400 bytes | low/medium |
-| MALICIOUS_IP_COMMUNICATION | Source or destination IP matches malicious IP blocklist | high |
-
-## Alert Format
-
-```json
-{
-  "timestamp": "2026-06-10T12:00:00+00:00",
-  "alert_type": "PORT_SCAN",
-  "severity": "medium",
-  "source_ip": "192.168.1.10",
-  "destination_ip": "192.168.1.20",
-  "description": "Possible port scan detected",
-  "evidence": {
-    "unique_ports": 25,
-    "time_window_seconds": 60
-  }
-}
-```
-
-## Run Tests
+Start the dashboard:
 
 ```bash
-pytest
+python dashboard.py
 ```
 
-## Limitations
+Open:
 
-- This version analyzes saved `.pcap` files only.
-- It does not sniff live traffic.
-- Detection logic is rule-based and intentionally simple.
-- Blocklists are local static files.
-- Alerts are indicators, not proof of compromise.
+```text
+http://127.0.0.1:5000
+```
 
-## Ethics
+## Current SOC Features
 
-Use this project only for:
-
-- owned lab environments
-- education
-- authorized traffic analysis
-- defensive security work
-
-Do not use it for unauthorized monitoring, intrusion, exploitation, or surveillance.
+* Alert generation
+* Threat intelligence matching
+* MITRE ATT&CK enrichment
+* Threat scoring
+* Risk classification
+* Incident correlation
+* Dashboard analytics
+* Incident investigation workflow
 
 ## Future Improvements
 
-- Live packet sniffing
-- SQLite storage
-- HTML report
-- Docker support
-- GitHub Actions
-- MITRE ATT&CK mapping
-- Suricata rule import
-- GeoIP lookup
-- Web dashboard
+* Case management
+* Analyst notes
+* GeoIP enrichment
+* Docker deployment
+* GitHub Actions CI/CD
+* Threat intelligence feeds
+* Live packet capture
+* MITRE Navigator export
