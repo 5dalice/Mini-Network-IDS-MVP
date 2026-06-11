@@ -268,3 +268,41 @@ tr:hover td {
         white-space: nowrap;
     }
 }
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+}
+
+.search-form input {
+    min-width: 320px;
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--panel-soft);
+    color: var(--text);
+    outline: none;
+}
+
+.search-form input:focus {
+    border-color: var(--accent);
+}
+
+.search-form button,
+.reset-link {
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--accent);
+    color: #020617;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.reset-link {
+    background: var(--panel-soft);
+    color: var(--text);
+}

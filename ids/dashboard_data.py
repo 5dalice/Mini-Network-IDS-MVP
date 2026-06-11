@@ -7,6 +7,35 @@ from pathlib import Path
 
 DB_PATH = Path("data/alerts.db")
 
+DISPLAY_NAMES = {
+    "PORT_SCAN": "Port Scan Detected",
+    "SYN_FLOOD_PATTERN": "TCP SYN Flood Pattern",
+    "MALICIOUS_DNS_QUERY": "Malicious DNS Query",
+    "REPEATED_LARGE_PACKETS": "Repeated Large Packet Transfer",
+    "MALICIOUS_IP_COMMUNICATION": "Malicious IP Communication",
+}
+
+
+def _normalize_alert(row: sqlite3.Row) -> dict:
+    alert = dict(row)
+
+    alert["display_name"] = DISPLAY_NAMES.get(
+        alert.get("alert_type"),
+        alert.get("alert_type"),
+    )
+
+    try:
+        alert["mitre_attack"] = json.loads(alert.get("mitre_attack") or "null")
+    except Exception:
+        alert["mitre_attack"] = None
+
+    try:
+        alert["evidence"] = json.loads(alert.get("evidence") or "{}")
+    except Exception:
+        alert["evidence"] = {}
+
+    return alert
+
 
 def load_alerts(severity: str | None = None) -> list[dict]:
     if not DB_PATH.exists():
@@ -25,24 +54,32 @@ def load_alerts(severity: str | None = None) -> list[dict]:
         conn.row_factory = sqlite3.Row
         rows = conn.execute(query, params).fetchall()
 
-    alerts = []
+    return [_normalize_alert(row) for row in rows]
 
-    for row in rows:
-        alert = dict(row)
 
-        try:
-            alert["mitre_attack"] = json.loads(alert.get("mitre_attack") or "null")
-        except Exception:
-            alert["mitre_attack"] = None
+def search_alerts_by_ip(ip_query: str) -> list[dict]:
+    if not DB_PATH.exists():
+        return []
 
-        try:
-            alert["evidence"] = json.loads(alert.get("evidence") or "{}")
-        except Exception:
-            alert["evidence"] = {}
+    ip_query = ip_query.strip()
 
-        alerts.append(alert)
+    if not ip_query:
+        return load_alerts()
 
-    return alerts
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT *
+            FROM alerts
+            WHERE source_ip LIKE ?
+               OR destination_ip LIKE ?
+            ORDER BY id DESC
+            """,
+            (f"%{ip_query}%", f"%{ip_query}%"),
+        ).fetchall()
+
+    return [_normalize_alert(row) for row in rows]
 
 
 def build_summary() -> dict:
@@ -57,7 +94,10 @@ def build_summary() -> dict:
 
 
 def build_analytics(alerts: list[dict]) -> dict:
-    alert_type_counts = Counter(a["alert_type"] for a in alerts)
+    alert_type_counts = Counter(
+        a.get("display_name") or a["alert_type"]
+        for a in alerts
+    )
 
     mitre_counts = Counter()
 
