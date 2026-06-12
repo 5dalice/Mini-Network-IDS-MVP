@@ -1,83 +1,32 @@
 # Mini Network IDS
 
-Mini Network IDS is a Python-based intrusion detection and incident analysis platform that analyzes `.pcap` files, detects suspicious network activity, applies threat scoring, correlates alerts into incidents, and visualizes results through a web dashboard.
+Mini Network IDS is a Python-based cybersecurity lab project that analyzes `.pcap` files and identifies potentially suspicious network activity using rule-based detections.
+
+The project demonstrates packet analysis, detection engineering, Sigma-style rules, MITRE ATT&CK mapping, threat scoring, incident correlation, and dashboard-based alert investigation.
 
 ## Features
 
-* PCAP analysis using Scapy
-* Rule-based network detections
-* Sigma-style detection rules (YAML)
-* MITRE ATT&CK mapping
-* Threat scoring and risk levels
-* Incident correlation engine
-* SQLite alert storage
-* JSON and HTML reports
-* Flask web dashboard
-* Chart.js visualizations
-* Severity filtering and IP search
-* Automated tests with pytest
+- PCAP analysis with Scapy
+- Rule-based network detections
+- Sigma-style detection rules
+- MITRE ATT&CK enrichment
+- Threat scoring and risk levels
+- Incident correlation
+- SQLite alert storage
+- JSON and HTML reporting
+- Flask web dashboard
+- Automated tests with pytest
 
 ## Detection Capabilities
 
-* Port Scan Detection
-* SYN Flood Detection
-* Malicious DNS Queries
-* Malicious IP Communication
-* Large Packet Transfer Detection
-* Sigma Rule Matching
+- Port Scan Detection
+- SYN Flood Detection
+- Malicious DNS Queries
+- Malicious IP Communication
+- Large Packet Transfer Detection
+- Sigma Rule Matching
 
-## Technologies
-
-* Python
-* Flask
-* SQLite
-* Scapy
-* PyYAML
-* Chart.js
-* Pytest
-* MITRE ATT&CK
-* Sigma Rules
-
-## Quick Start
+## Installation
 
 ```bash
-python mini_ids.py \
-  --pcap samples/test_traffic.pcap \
-  --output reports/report.json \
-  --db-output data/alerts.db \
-  --show-summary
-```
-
-Start the dashboard:
-
-```bash
-python dashboard.py
-```
-
-Open:
-
-```text
-http://127.0.0.1:5000
-```
-
-## Current SOC Features
-
-* Alert generation
-* Threat intelligence matching
-* MITRE ATT&CK enrichment
-* Threat scoring
-* Risk classification
-* Incident correlation
-* Dashboard analytics
-* Incident investigation workflow
-
-## Future Improvements
-
-* Case management
-* Analyst notes
-* GeoIP enrichment
-* Docker deployment
-* GitHub Actions CI/CD
-* Threat intelligence feeds
-* Live packet capture
-* MITRE Navigator export
+pip install -r requirements.txt

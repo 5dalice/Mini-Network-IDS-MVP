@@ -13,6 +13,8 @@ DISPLAY_NAMES = {
     "MALICIOUS_DNS_QUERY": "Malicious DNS Request",
     "REPEATED_LARGE_PACKETS": "Large Data Transfer",
     "MALICIOUS_IP_COMMUNICATION": "Communication with Blocklisted IP",
+    "SIGMA_DNS_MATCH": "Sigma DNS Rule Match",
+    "SIGMA_RULE_MATCH": "Sigma Rule Match",
 }
 
 
@@ -57,29 +59,83 @@ def load_alerts(severity: str | None = None) -> list[dict]:
     return [_normalize_alert(row) for row in rows]
 
 
-def search_alerts_by_ip(ip_query: str) -> list[dict]:
+def filter_alerts(
+    *,
+    ip_query: str = "",
+    severity: str = "",
+    alert_type: str = "",
+    risk_level: str = "",
+) -> list[dict]:
     if not DB_PATH.exists():
         return []
 
-    ip_query = ip_query.strip()
+    query = "SELECT * FROM alerts WHERE 1=1"
+    params = []
 
-    if not ip_query:
-        return load_alerts()
+    ip_query = ip_query.strip()
+    severity = severity.strip()
+    alert_type = alert_type.strip()
+    risk_level = risk_level.strip()
+
+    if ip_query:
+        query += " AND (source_ip LIKE ? OR destination_ip LIKE ?)"
+        params.extend([f"%{ip_query}%", f"%{ip_query}%"])
+
+    if severity:
+        query += " AND severity = ?"
+        params.append(severity)
+
+    if alert_type:
+        query += " AND alert_type = ?"
+        params.append(alert_type)
+
+    if risk_level:
+        query += " AND risk_level = ?"
+        params.append(risk_level)
+
+    query += " ORDER BY id DESC"
 
     with sqlite3.connect(DB_PATH) as conn:
         conn.row_factory = sqlite3.Row
-        rows = conn.execute(
-            """
-            SELECT *
-            FROM alerts
-            WHERE source_ip LIKE ?
-               OR destination_ip LIKE ?
-            ORDER BY id DESC
-            """,
-            (f"%{ip_query}%", f"%{ip_query}%"),
-        ).fetchall()
+        rows = conn.execute(query, params).fetchall()
 
     return [_normalize_alert(row) for row in rows]
+
+
+def search_alerts_by_ip(ip_query: str) -> list[dict]:
+    return filter_alerts(ip_query=ip_query)
+
+
+def get_filter_options() -> dict:
+    alerts = load_alerts()
+
+    alert_types = sorted(
+        {
+            alert.get("alert_type")
+            for alert in alerts
+            if alert.get("alert_type")
+        }
+    )
+
+    display_names = {
+        alert.get("alert_type"): alert.get("display_name")
+        for alert in alerts
+        if alert.get("alert_type")
+    }
+
+    risk_levels = sorted(
+        {
+            alert.get("risk_level")
+            for alert in alerts
+            if alert.get("risk_level")
+        }
+    )
+
+    return {
+        "alert_types": alert_types,
+        "display_names": display_names,
+        "risk_levels": risk_levels,
+    }
 
 
 def build_summary() -> dict:
@@ -119,6 +175,7 @@ def build_analytics(alerts: list[dict]) -> dict:
             "low": severity_counts.get("low", 0),
         },
     }
+
 
 def build_chart_data(alerts: list[dict]) -> dict:
     analytics = build_analytics(alerts)
