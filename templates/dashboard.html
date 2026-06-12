@@ -16,7 +16,7 @@
             <h1>Mini Network IDS Dashboard</h1>
             <p>SQLite-backed alert monitoring with MITRE ATT&CK context and visual analytics.</p>
         </div>
-        <div class="status-pill">Database: data/alerts.db</div>
+<div class="status-pill">Detection Platform</div>
     </header>
 
     <section class="cards">
@@ -63,63 +63,104 @@
             </div>
         </div>
     </section>
-<section class="table-panel incidents-panel">
-    <div class="table-title">
-        <h2>Top Correlated Incidents</h2>
-        <span>{{ incidents|length }} incidents</span>
-    </div>
 
-    {% if incidents %}
-    <table>
-        <thead>
-        <tr>
-            <th>Incident ID</th>
-            <th>Source IP</th>
-            <th>Risk</th>
-            <th>Total Score</th>
-            <th>Alerts</th>
-            <th>First Seen</th>
-            <th>Last Seen</th>
-            <th>Alert Types</th>
-        </tr>
-        </thead>
+    <section class="table-panel incidents-panel">
+        <div class="table-title">
+            <h2>Top Correlated Incidents</h2>
+            <span>{{ incidents|length }} incidents</span>
+        </div>
 
-        <tbody>
-        {% for incident in incidents %}
-        <tr>
-            <td>#{{ incident.incident_id }}</td>
-            <td>{{ incident.source_ip }}</td>
-            <td>
-                <span class="badge {{ incident.risk_level }}">
-                    {{ incident.risk_level }}
-                </span>
-            </td>
-            <td>{{ incident.total_score }}</td>
-            <td>{{ incident.alert_count }}</td>
-            <td>{{ incident.first_seen }}</td>
-            <td>{{ incident.last_seen }}</td>
-            <td class="description">
-                {{ incident.alert_types | join(", ") }}
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-        <div class="empty">No correlated incidents found.</div>
-    {% endif %}
-</section>
+        {% if incidents %}
+        <table>
+            <thead>
+            <tr>
+                <th>Incident ID</th>
+                <th>Source IP</th>
+                <th>Risk</th>
+                <th>Total Score</th>
+                <th>Alerts</th>
+                <th>First Seen</th>
+                <th>Last Seen</th>
+                <th>Alert Types</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for incident in incidents %}
+            <tr>
+                <td>#{{ incident.incident_id }}</td>
+                <td>{{ incident.source_ip }}</td>
+                <td>
+                    <span class="badge {{ incident.risk_level }}">
+                        {{ incident.risk_level }}
+                    </span>
+                </td>
+                <td>{{ incident.total_score }}</td>
+                <td>{{ incident.alert_count }}</td>
+                <td>{{ incident.first_seen }}</td>
+                <td>{{ incident.last_seen }}</td>
+                <td class="description">
+                    {{ incident.alert_types | join(", ") }}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="empty">No correlated incidents found.</div>
+        {% endif %}
+    </section>
+
     <nav class="filters">
-        <a href="/" class="{% if not selected_severity %}active{% endif %}">All</a>
+        <a href="/" class="{% if not selected_severity and not search_ip and not selected_alert_type and not selected_risk_level %}active{% endif %}">All</a>
         <a href="/alerts/high" class="{% if selected_severity == 'high' %}active{% endif %}">High</a>
         <a href="/alerts/medium" class="{% if selected_severity == 'medium' %}active{% endif %}">Medium</a>
         <a href="/alerts/low" class="{% if selected_severity == 'low' %}active{% endif %}">Low</a>
     </nav>
 
+    <form class="search-form" action="/search" method="get">
+        <input
+            type="text"
+            name="ip"
+            placeholder="Search source or destination IP..."
+            value="{{ search_ip or '' }}"
+        >
+
+        <select name="severity">
+            <option value="">All severities</option>
+            <option value="high" {% if selected_severity == 'high' %}selected{% endif %}>High</option>
+            <option value="medium" {% if selected_severity == 'medium' %}selected{% endif %}>Medium</option>
+            <option value="low" {% if selected_severity == 'low' %}selected{% endif %}>Low</option>
+        </select>
+
+        <select name="alert_type">
+            <option value="">All alert types</option>
+            {% for alert_type in filter_options.alert_types %}
+                <option value="{{ alert_type }}" {% if selected_alert_type == alert_type %}selected{% endif %}>
+                    {{ filter_options.display_names.get(alert_type, alert_type) }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <select name="risk_level">
+            <option value="">All risk levels</option>
+            {% for risk_level in filter_options.risk_levels %}
+                <option value="{{ risk_level }}" {% if selected_risk_level == risk_level %}selected{% endif %}>
+                    {{ risk_level|capitalize }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Apply Filters</button>
+        <a class="reset-link" href="/">Reset</a>
+    </form>
+
     <section class="table-panel">
         <div class="table-title">
             <h2>
-                {% if selected_severity %}
+                {% if search_ip or selected_alert_type or selected_risk_level %}
+                    Filtered Alerts
+                {% elif selected_severity %}
                     {{ selected_severity|capitalize }} Alerts
                 {% else %}
                     All Alerts
@@ -135,6 +176,8 @@
                 <th>ID</th>
                 <th>Timestamp</th>
                 <th>Severity</th>
+                <th>Risk</th>
+                <th>Score</th>
                 <th>Alert Type</th>
                 <th>Source IP</th>
                 <th>Destination IP</th>
@@ -153,7 +196,13 @@
                         {{ alert.severity }}
                     </span>
                 </td>
-               <td>{{ alert.display_name }}</td>
+                <td>
+                    <span class="badge {{ alert.risk_level }}">
+                        {{ alert.risk_level or "n/a" }}
+                    </span>
+                </td>
+                <td>{{ alert.threat_score or 0 }}</td>
+                <td>{{ alert.display_name }}</td>
                 <td>{{ alert.source_ip }}</td>
                 <td>{{ alert.destination_ip }}</td>
                 <td class="description">{{ alert.description }}</td>
