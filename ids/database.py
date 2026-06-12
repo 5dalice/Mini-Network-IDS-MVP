@@ -16,7 +16,10 @@ def init_db(db_path: str | Path) -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp TEXT NOT NULL,
                 alert_type TEXT NOT NULL,
+                display_name TEXT,
                 severity TEXT NOT NULL,
+                risk_level TEXT,
+                threat_score INTEGER,
                 source_ip TEXT,
                 destination_ip TEXT,
                 description TEXT NOT NULL,
@@ -36,20 +39,26 @@ def save_alerts_to_db(alerts: list[dict], db_path: str | Path) -> None:
             INSERT INTO alerts (
                 timestamp,
                 alert_type,
+                display_name,
                 severity,
+                risk_level,
+                threat_score,
                 source_ip,
                 destination_ip,
                 description,
                 mitre_attack,
                 evidence
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [
                 (
                     alert.get("timestamp"),
                     alert.get("alert_type"),
+                    alert.get("display_name"),
                     alert.get("severity"),
+                    alert.get("risk_level"),
+                    alert.get("threat_score"),
                     alert.get("source_ip"),
                     alert.get("destination_ip"),
                     alert.get("description"),
