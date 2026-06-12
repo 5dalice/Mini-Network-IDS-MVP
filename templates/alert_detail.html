@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Alert Details</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+
+<body>
+<div class="container">
+
+    <header class="header">
+        <div>
+            <h1>Alert Investigation</h1>
+            <p>Detailed alert information and investigation context.</p>
+        </div>
+    </header>
+
+    <section class="table-panel">
+
+        <div class="table-title">
+            <h2>{{ alert.display_name }}</h2>
+            <span>ID {{ alert.id }}</span>
+        </div>
+
+        <table>
+            <tbody>
+
+            <tr>
+                <th>Timestamp</th>
+                <td>{{ alert.timestamp }}</td>
+            </tr>
+
+            <tr>
+                <th>Severity</th>
+                <td>{{ alert.severity }}</td>
+            </tr>
+
+            <tr>
+                <th>Risk Level</th>
+                <td>{{ alert.risk_level }}</td>
+            </tr>
+
+            <tr>
+                <th>Threat Score</th>
+                <td>{{ alert.threat_score }}</td>
+            </tr>
+
+            <tr>
+                <th>Source IP</th>
+                <td>{{ alert.source_ip }}</td>
+            </tr>
+
+            <tr>
+                <th>Destination IP</th>
+                <td>{{ alert.destination_ip }}</td>
+            </tr>
+
+            <tr>
+                <th>Description</th>
+                <td>{{ alert.description }}</td>
+            </tr>
+
+            {% if alert.mitre_attack %}
+            <tr>
+                <th>MITRE Technique</th>
+                <td>
+                    {{ alert.mitre_attack.technique_id }}
+                    -
+                    {{ alert.mitre_attack.technique_name }}
+                </td>
+            </tr>
+            {% endif %}
+
+            <tr>
+                <th>Evidence</th>
+                <td>
+                    <pre>{{ alert.evidence }}</pre>
+                </td>
+            </tr>
+
+            </tbody>
+        </table>
+
+        <br>
+
+        <a href="/">← Back to Dashboard</a>
+
+    </section>
+
+</div>
+</body>
+</html>

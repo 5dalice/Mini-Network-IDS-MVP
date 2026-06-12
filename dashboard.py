@@ -8,6 +8,8 @@ from ids.dashboard_data import (
     build_chart_data,
     build_summary,
     filter_alerts,
+    get_incident_by_id,
+    get_alert_by_id,
     get_filter_options,
     load_alerts,
 )
@@ -82,6 +84,31 @@ def search():
         selected_risk_level=risk_level or None,
     )
 
+
+@app.route("/alert/<int:alert_id>")
+def alert_detail(alert_id: int):
+    alert = get_alert_by_id(alert_id)
+
+    if alert is None:
+        return "Alert not found", 404
+
+    return render_template(
+        "alert_detail.html",
+        alert=alert,
+    )
+
+
+@app.route("/incident/<int:incident_id>")
+def incident_detail(incident_id: int):
+    incident = get_incident_by_id(incident_id)
+
+    if incident is None:
+        return "Incident not found", 404
+
+    return render_template(
+        "incident_detail.html",
+        incident=incident,
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -13,9 +13,8 @@
 
     <header class="header">
         <div>
-            <h1>Mini Network IDS Dashboard</h1>
-            <p>SQLite-backed alert monitoring with MITRE ATT&CK context and visual analytics.</p>
-        </div>
+          <h1>Mini Network IDS Platform</h1>
+<p>Network threat detection and incident investigation platform with MITRE ATT&CK enrichment, threat scoring, and correlated security incidents.</p></div>
 <div class="status-pill">Detection Platform</div>
     </header>
 
@@ -88,7 +87,11 @@
             <tbody>
             {% for incident in incidents %}
             <tr>
-                <td>#{{ incident.incident_id }}</td>
+         <td>
+    <a href="/incident/{{ incident.incident_id }}">
+        #{{ incident.incident_id }}
+    </a>
+</td>
                 <td>{{ incident.source_ip }}</td>
                 <td>
                     <span class="badge {{ incident.risk_level }}">
@@ -202,7 +205,11 @@
                     </span>
                 </td>
                 <td>{{ alert.threat_score or 0 }}</td>
-                <td>{{ alert.display_name }}</td>
+                <td>
+                    <a href="/alert/{{ alert.id }}">
+                          {{ alert.display_name }}
+                    </a>
+                </td>
                 <td>{{ alert.source_ip }}</td>
                 <td>{{ alert.destination_ip }}</td>
                 <td class="description">{{ alert.description }}</td>

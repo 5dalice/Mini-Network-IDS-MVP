@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from ids.correlation import build_incidents
 import json
 import sqlite3
 from collections import Counter
@@ -200,3 +200,34 @@ def build_chart_data(alerts: list[dict]) -> dict:
             item[1] for item in analytics["top_mitre"]
         ],
     }
+def get_alert_by_id(alert_id: int) -> dict | None:
+    if not DB_PATH.exists():
+        return None
+
+    with sqlite3.connect(DB_PATH) as conn:
+        conn.row_factory = sqlite3.Row
+
+        row = conn.execute(
+            """
+            SELECT *
+            FROM alerts
+            WHERE id = ?
+            """,
+            (alert_id,),
+        ).fetchone()
+
+    if row is None:
+        return None
+
+    return _normalize_alert(row)
+
+
+def get_incident_by_id(incident_id: int) -> dict | None:
+    alerts = load_alerts()
+    incidents = build_incidents(alerts)
+
+    for incident in incidents:
+        if incident.get("incident_id") == incident_id:
+            return incident
+
+    return None

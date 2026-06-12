@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Incident Details</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+
+<body>
+<div class="container">
+
+    <header class="header">
+        <div>
+            <h1>Incident Investigation</h1>
+            <p>Correlated alert timeline and incident context.</p>
+        </div>
+    </header>
+
+    <section class="cards">
+        <div class="card">
+            <span class="card-label">Incident ID</span>
+            <span class="card-value">#{{ incident.incident_id }}</span>
+        </div>
+
+        <div class="card">
+            <span class="card-label">Source IP</span>
+            <span class="card-value">{{ incident.source_ip }}</span>
+        </div>
+
+        <div class="card">
+            <span class="card-label">Total Score</span>
+            <span class="card-value">{{ incident.total_score }}</span>
+        </div>
+
+        <div class="card">
+            <span class="card-label">Risk Level</span>
+            <span class="card-value">{{ incident.risk_level }}</span>
+        </div>
+    </section>
+
+    <section class="table-panel">
+        <div class="table-title">
+            <h2>Incident Summary</h2>
+            <span>{{ incident.alert_count }} related alerts</span>
+        </div>
+
+        <table>
+            <tbody>
+            <tr>
+                <th>First Seen</th>
+                <td>{{ incident.first_seen }}</td>
+            </tr>
+            <tr>
+                <th>Last Seen</th>
+                <td>{{ incident.last_seen }}</td>
+            </tr>
+            <tr>
+                <th>Max Alert Score</th>
+                <td>{{ incident.max_alert_score }}</td>
+            </tr>
+            <tr>
+                <th>Alert Types</th>
+                <td>{{ incident.alert_types | join(", ") }}</td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="table-panel">
+        <div class="table-title">
+            <h2>Incident Timeline</h2>
+            <span>Chronological alert view</span>
+        </div>
+
+        {% if incident.alerts %}
+        <table>
+            <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Severity</th>
+                <th>Risk</th>
+                <th>Score</th>
+                <th>Alert</th>
+                <th>Destination</th>
+                <th>MITRE</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for alert in incident.alerts %}
+            <tr>
+                <td>{{ alert.timestamp }}</td>
+                <td>
+                    <span class="badge {{ alert.severity }}">
+                        {{ alert.severity }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge {{ alert.risk_level }}">
+                        {{ alert.risk_level or "n/a" }}
+                    </span>
+                </td>
+                <td>{{ alert.threat_score or 0 }}</td>
+                <td>
+                    <a href="/alert/{{ alert.id }}">
+                        {{ alert.display_name }}
+                    </a>
+                </td>
+                <td>{{ alert.destination_ip }}</td>
+                <td>
+                    {% if alert.mitre_attack %}
+                        {{ alert.mitre_attack.technique_id }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="empty">No related alerts found.</div>
+        {% endif %}
+    </section>
+
+    <section class="table-panel">
+        <a href="/">← Back to Dashboard</a>
+    </section>
+
+</div>
+</body>
+</html>
